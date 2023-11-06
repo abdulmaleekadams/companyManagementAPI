@@ -1,39 +1,50 @@
+const AsyncHandler = require('express-async-handler');
 const HR = require('../model/hrSchema');
+const { registerUser, loginUser } = require('../utils/user');
 
-exports.createHR = async (req, res) => {
-    // console.log(req);
-  const {
-    firstname,
-    lastname,
-    email,
-    department,
-    position,
-    birthdate,
-    address,
-    phone,
-  } = req.body;
+// @desc Register HR
+// @route POST /api/hrs/register
+// @access Private
+exports.createHR = AsyncHandler(async (req, res, next) => {
+  await registerUser(HR, req, res, next);
+});
 
-  const birthDate = new Date(birthdate).toLocaleDateString();
+// @desc Login HR
+// @route POST /api/hrs/login
+// @access Private
+exports.loginHR = AsyncHandler(async (req, res, next) => {
+  await loginUser(HR, req, res, next);
+});
 
-  // Check if exist
-  const hrFound = await HR.findOne({ email });
-  if (hrFound) {
-    throw new Error('Admin Exist');
-  }
-  const newHR = await HR.create({
-    firstname,
-    lastname,
-    email,
-    department,
-    position,
-    birthDate,
-    address,
-    phone,
+exports.logout = (req, res, next) => {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect('/login');
   });
-  res.status(201).json({ status: 'Success', data: newHR });
-}
+};
 
-exports.getHR = (req, res) => {
-    console.log('Here I am');
-}
-
+// @desc Get HR Dashboard
+// @route GET /api/hrs/dashboard/:id
+// @access Private
+exports.getDashboard = AsyncHandler(async (req, res) => {
+  const id = req.params.id;
+  if (req.isAuthenticated()) {
+    // Access user details
+    await HR.findById(id)
+      .exec()
+      .then((user) => {
+        if (user.email === req.session.passport.user) {
+          res.status(200).json({
+            status: 'Success',
+            data: user,
+          });
+        } else {
+          throw new Error('Unauthorized');
+        }
+      });
+  } else {
+    throw new Error('Unauthorized');
+  }
+});

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const employeeId = require('../middlewares/employeeNo');
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const hrSchema = new mongoose.Schema(
   {
@@ -7,60 +7,31 @@ const hrSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     lastname: {
       type: String,
       required: true,
     },
+
+    password: String,
+
+    role: {
+      type: String,
+      default: 'hrs',
+      required: true,
+    },
+
+    employee: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Staff',
+      },
+    ],
+
     email: {
       type: String,
       required: true,
       unique: true,
-    },
-    department: {
-      type: String,
-      required: true,
-    },
-    position: {
-      type: String,
-      required: true,
-    },
-    birthDate: {
-      type: String,
-      required: true,
-    },
-    address: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-    },
-    // createdBy: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Admin',
-    //   required: true,
-    // },
-    dateEmployed: {
-      type: String,
-      default: new Date().toDateString(),
-      required: true,
-    },
-    employeeNumber: {
-      type: String,
-      unique: true,
-    },
-    isOnleave: {
-      type: Boolean,
-      default: false,
-    },
-    isSuspended: {
-      type: Boolean,
-      default: false,
-    },
-    isLaidOff: {
-      type: Boolean,
-      default: false,
     },
   },
   {
@@ -68,12 +39,7 @@ const hrSchema = new mongoose.Schema(
   }
 );
 
-hrSchema.pre('save', async function (next) {
-  if (!this.employeeNumber) {
-    this.employeeNumber = await employeeId(HR, this.dateEmployed);
-  }
-  next();
-});
+hrSchema.plugin(passportLocalMongoose, { usernameField: 'email' });
 
 const HR = mongoose.model('HR', hrSchema);
 
